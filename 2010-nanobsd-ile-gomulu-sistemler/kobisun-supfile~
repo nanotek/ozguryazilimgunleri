@@ -1,0 +1,10 @@
+# FreeBSD Kaynak Kodları ve Port Ağacını Güncellemek için gerekli dosya
+# cvsup -g -L 2 kobisun-supfile
+*default host=cvsup2.tr.FreeBSD.org
+*default base=/var/db
+*default prefix=/usr
+*default release=cvs tag=RELENG_8
+*default delete use-rel-suffix
+*default compress
+src-all
+ports-all tag=.

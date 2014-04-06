@@ -1,0 +1,188 @@
+# Name of this NanoBSD build.  (Used to construct workdir names)
+NANO_NAME=kobisun
+
+# Kernel file
+NANO_KERNEL=KOBISUN
+
+# Target Media Size : 1GB
+NANO_MEDIASIZE=`expr 1014644736 / 512` 
+NANO_HEADS=16
+NANO_SECTS=63
+
+# Set Code Image Size to something big enough  
+NANO_CODESIZE=958096
+
+# Disable secondary image copying.
+NANO_INIT_IMG2=0
+
+# Raise config partition size to 16 MB (512 byte sectors)
+NANO_CONFSIZE=32768
+
+# Do not setup Data Partition Yet, we will try to set it up later
+NANO_DATASIZE=-1
+
+# Set MD Sizes to 16 MB EACH (512 byte sectors)
+NANO_RAM_ETCSIZE=90000
+NANO_RAM_TMPVARSIZE=32768
+
+# Configure buildworld options
+CONF_WORLD='
+WITHOUT_ACCT=
+WITHOUT_APM=
+WITHOUT_ASSERT_DEBUG=
+WITHOUT_ATM=
+WITHOUT_AUDIT=
+WITHOUT_AUTHPF=
+WITHOUT_BIND=
+WITHOUT_BIND_DNSSEC=
+WITHOUT_BIND_ETC=
+WITHOUT_BIND_LIBS_LWRES=
+WITHOUT_BIND_MTREE=
+WITHOUT_BIND_NAMED=
+WITHOUT_BIND_UTILS=
+WITHOUT_BLUETOOTH=
+WITHOUT_CALENDAR=
+WITHOUT_CTM=
+WITHOUT_CVS=
+WITHOUT_DICT=
+WITHOUT_EXAMPLES=
+WITHOUT_FLOPPY=
+WITHOUT_FREEBSD_UPDATE=
+WITHOUT_GAMES=
+WITHOUT_GCOV=
+WITHOUT_GDB=
+WITHOUT_GPIB=
+WITHOUT_GROFF=
+WITHOUT_HTML=
+WITHOUT_IPFILTER=
+WITHOUT_IPFW=
+WITHOUT_IPX=
+WITHOUT_IPX_SUPPORT=
+WITHOUT_JAIL=
+WITHOUT_KERBEROS=
+WITHOUT_KERBEROS_SUPPORT=
+WITHOUT_LEGACY_CONSOLE=
+WITHOUT_LIB32=
+WITHOUT_LOCALES=
+WITHOUT_LOCATE=
+WITHOUT_LPR=
+WITHOUT_MAIL=
+WITHOUT_MAILWRAPPER=
+WITHOUT_NCP=
+WITHOUT_NDIS=
+WITHOUT_NIS=
+WITHOUT_NLS=
+WITHOUT_NLS_CATALOGS=
+WITHOUT_NS_CACHING=
+WITHOUT_PORTSNAP=
+WITHOUT_QUOTAS=
+WITHOUT_RCMDS=
+WITHOUT_RCS=
+WITHOUT_RESCUE=
+WITHOUT_SHAREDOCS=
+WITHOUT_SSP=
+WITHOUT_SYSINSTALL=
+WITHOUT_TELNET=
+WITHOUT_WIRELESS=
+WITHOUT_WIRELESS_SUPPORT=
+WITHOUT_WPA_SUPPLICANT_EAPOL=
+WITHOUT_ZFS=
+'
+
+# kobisun_custom function
+kobisun_custom () {
+
+	# Compress the kernel (save 3Mb)
+
+	if [ -f ${NANO_WORLDDIR}/boot/kernel/kernel ]
+	then
+		gzip -v9 ${NANO_WORLDDIR}/boot/kernel/kernel
+	fi
+
+	# Remove info and man pages
+
+	if [ -d ${NANO_WORLDDIR}/usr/local/info ]
+	then
+		rm -f ${NANO_WORLDDIR}/usr/local/info/*.*
+	fi
+
+	# HACK Remove openssl.core from the /etc/local/raddb/certs/ folder
+
+	# Remove doc folder, you can create a list bu running
+	#
+	# 	ls -c1 >> DOCS_TO_REMOVE.list
+	#
+	# in the ${NANO_WORLDDIR}/usr/local/share/doc/ directory
+
+	DOCS_TO_REMOVE='
+'
+	for c in $DOCS_TO_REMOVE
+	do	
+		if [ -d ${NANO_WORLDDIR}/usr/local/share/doc/$c ]
+		then
+			rm -rf ${NANO_WORLDDIR}/usr/local/share/doc/$c
+		fi
+	done
+
+	# Remove info files and maybe info binary too, do we need it after the build?
+
+	if [ -d ${NANO_WORLDDIR}/usr/share/info ]
+	then
+		rm -f ${NANO_WORLDDIR}/usr/share/info/*.gz
+	fi
+
+	# Remove all include files (16Mb)
+	# This script is ok, bu we have many include sub-dirs so it is not efficient
+	# as much as I would like it to be. They should compress good they are all .h
+	# files. Or we may think about rm -rf /usr/include and mkdri /usr/include or 		
+	# somehow find a way to list all sub dirs to a list and rm -rf $c 
+
+	#if [ -d ${NANO_WORLDDIR}/usr/include ]
+	#then
+	#	rm -rf ${NANO_WORLDDIR}/usr/include/*
+	#	rm -rf ${NANO_WORLDDIR}/usr/include/net-snmp
+	#fi
+
+	# Remove some files
+
+    FILES_TO_REMOVE='
+'
+    for c in $FILES_TO_REMOVE
+    do
+        if [ -f ${NANO_WORLDDIR}/$c ]
+        then
+            rm -rf ${NANO_WORLDDIR}/$c
+        fi
+    done
+
+}
+
+# copy when finished
+last_orders(){
+
+	mv /usr/obj/${NANO_NAME}/_.disk.full /usr/local/www/data/kobisun-nano-snapshot.img
+	cd /usr/local/www/data
+	gzip kobisun-nano-snapshot.img
+
+}
+
+
+# Install Custom scripts and config files
+
+customize_cmd cust_install_files
+
+# Allow root login via ssh
+
+customize_cmd cust_allow_ssh_root
+
+# Install Custom Packages from Pkg/
+
+customize_cmd cust_pkg
+
+# Run kobisun.org spice before image build 
+
+customize_cmd kobisun_custom
+
+# No need for beastie menu
+
+

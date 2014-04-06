@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+#
+# kobisun.org uptime script
+#
+# This script will update the kobisun.org kobisun.uptime file
+# 
+#
+
+#DATA_DIR=/usr/loca/www/apache22/data
+DATA_DIR=/home/nanotek/Desktop
+
+# 
+
+uptime > $DATA_DIR/`hostname`.uptime
+
